@@ -56,8 +56,16 @@ read_thresholded_factor_matrices <- function(folder, threshold=0.01) {
               "K"=sum(both_nonempty)))
 }
 
-calc_factor_contribution(biclustering, factor_index) {
-
+calc_factor_contribution <- function(biclustering, factor_index) {
+  factor_contribution <- outer(biclustering$X[, factor_index],
+        biclustering$B[, factor_index])
   return(factor_contribution)  
 }
 
+calc_nz_factor_contribution <- function(biclustering, factor_index) {
+  nz_samples <- (biclustering$X[, factor_index] != 0)
+  nz_genes <- (biclustering$B[, factor_index] != 0)
+  factor_contribution <- outer(biclustering$X[nz_samples, factor_index],
+                               biclustering$B[nz_genes, factor_index])
+  return(factor_contribution)
+}
