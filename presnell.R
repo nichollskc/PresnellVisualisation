@@ -2,6 +2,7 @@ main_run <- "/Users/kath/docs/PhD/biclustering/E-GEOD-60424/results/SSLB/real/pr
 
 sample_info <- read.csv("/Users/kath/docs/PhD/biclustering/E-GEOD-60424/data/real/presnell/deseq_sf/raw/expressed/tensor/sample_info_tidied.txt",
                        sep='\t')
+sample_info$age <- sample_info$Characteristics..age.
 
 sample_names <- sample_info[['sample_description']]
 gene_info <- read.csv("/Users/kath/docs/PhD/biclustering/E-GEOD-60424/data/real/presnell/deseq_sf/raw/expressed/tensor/gene_info.txt",
