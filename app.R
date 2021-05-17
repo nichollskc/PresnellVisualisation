@@ -25,6 +25,7 @@ ui <- fluidPage(
     sidebarPanel(
       numericInput(inputId="factor", label="Factor",
                    value=11, min=1, max=SSLB_result$K, step=1),
+      htmlOutput("summary_text")
     ),
     mainPanel(
       dataTableOutput("pathways_table"),
@@ -50,7 +51,7 @@ server <- function(input, output) {
     factor_column <- paste0("factor_", input$factor)
     abs_factor_column <- paste0("abs_factor_", input$factor)
     sample_info_with_fac %>%
-      arrange(desc(abs_factor_column)) %>%
+      arrange(desc(!!as.name(factor_column))) %>%
       select("sample_description", "sex", "disease", "cell", "treatment", "age",
              factor_column, abs_factor_column)
   })
@@ -61,24 +62,22 @@ server <- function(input, output) {
 
   sorted_genes <- reactive({
     enriched_pathway_names <- enriched_pathways()$PathwayName
-    print(enriched_pathway_names)
 
     factor_column <- paste0("factor_", input$factor)
     abs_factor_column <- paste0("abs_factor_", input$factor)
     gene_info_with_fac %>%
-      arrange(desc(abs_factor_column)) %>%
+      arrange(desc(!!as.name(factor_column))) %>%
       select(GeneSymbol, ensembl,
              factor_column, abs_factor_column,
              enriched_pathway_names)
   })
   sorted_genes_nz <- reactive({
-    sorted_genes()
     abs_factor_column <- paste0("abs_factor_", input$factor)
-    sorted_genes() %>% filter(abs(!!as.name(abs_factor_column)) > 0)
+    sorted_genes() %>%
+      filter(abs(!!as.name(abs_factor_column)) > 0)
   })
 
   enriched_pathways <- reactive({
-    print(colnames(pathway_enrichment))
     pathway_enrichment %>%
       arrange(CameraPR_qvalue) %>%
       filter(CameraPR_qvalue < 0.05, FactorIndex == input$factor) %>%
@@ -88,11 +87,14 @@ server <- function(input, output) {
 
   nz_factor_contribution_sorted <- reactive({
     factor_cont <- factor_contribution()
-    factor_cont[rownames(sorted_samples_nz()), nz_genes()]
+    factor_cont[rownames(sorted_samples_nz()), rownames(sorted_genes_nz())]
   })
   
   output$factorcontribution_heatmap <- renderPlotly({
-    heatmaply(nz_factor_contribution_sorted(), Rowv=FALSE, Colv=FALSE)
+    heatmaply(nz_factor_contribution_sorted(),
+              # Don't apply clustering to rows and columns since we've already sorted
+              Rowv=FALSE, Colv=FALSE,
+              scale_fill_gradient_fun = scale_fill_gradient2(low="blue", high="red", midpoint=0))
   })
   output$nz_samples_table <- renderDataTable({
     sorted_samples_nz()
@@ -102,6 +104,13 @@ server <- function(input, output) {
   })
   output$pathways_table <- renderDataTable({
     enriched_pathways()
+  })
+  output$summary_text <- renderUI({
+    HTML(
+      sprintf("Total samples: %d<br>Total genes: %d",
+              sum(nz_samples()),
+              sum(nz_genes()))
+    )
   })
 }
 
