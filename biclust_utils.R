@@ -1,4 +1,5 @@
 library(limma)
+library(tibble)
 
 read_matrix_from_folder <- function(folder, file) {
   full_filename <- paste(folder, file, sep="/")
@@ -146,4 +147,55 @@ add_odds_ratio_and_counts <- function(pathway_enrichment, biclustering, pathway_
   odds_out_factor <- pathway_not_factor / neither
   pathway_enrichment$OddsRatio <- odds_in_factor / odds_out_factor
   return(pathway_enrichment)
+}
+
+count_samples_by_type <- function(sample_info) {
+  total_sample_counts_by_cell_disease <- sample_info %>%
+    group_by(cell, short_disease) %>%
+    summarize(total=n()) %>%
+    pivot_wider(names_from=short_disease, values_from=total) %>%
+    column_to_rownames(var='cell') %>%
+    select(order(colnames(.)))
+  
+  total_sample_counts_by_sex_disease <- sample_info %>%
+    group_by(sex, short_disease) %>%
+    summarize(total=n()) %>%
+    pivot_wider(names_from=short_disease, values_from=total) %>%
+    column_to_rownames(var='sex') %>%
+    select(order(colnames(.)))
+  
+  return(list("by_cell_disease"=total_sample_counts_by_cell_disease,
+              "by_sex_disease"=total_sample_counts_by_sex_disease))
+}
+
+calculate_proportions_sample_types <- function(sample_info_with_fac, factor_index) {
+  sample_info_with_fac$in_factor = sample_info_with_fac[[paste0("factor_", factor_index)]] != 0
+  proportions_by_cell_disease <- sample_info_with_fac %>%
+    group_by(cell, short_disease, in_factor) %>%
+    summarise(n=n()) %>%
+    mutate(freq=n/sum(n)) %>%
+    select(cell, short_disease, freq, in_factor) %>%
+    pivot_wider(names_from=short_disease, values_from=freq) %>%
+    filter(in_factor) %>%
+    select(-in_factor) %>%
+    column_to_rownames(var="cell") %>%
+    select(order(colnames(.)))
+  
+  proportions_by_sex_disease <- sample_info_with_fac %>%
+    group_by(sex, short_disease, in_factor) %>%
+    summarise(n=n()) %>%
+    mutate(freq=n/sum(n)) %>%
+    select(sex, short_disease, freq, in_factor) %>%
+    pivot_wider(names_from=short_disease, values_from=freq) %>%
+    filter(in_factor) %>%
+    select(-in_factor) %>%
+    column_to_rownames(var="sex") %>%
+    select(order(colnames(.)))
+  
+  return(list("by_cell_disease"=proportions_by_cell_disease,
+              "by_sex_disease"=proportions_by_sex_disease))
+}
+
+proportions_to_integral_percentages <- function(df) {
+  return(data.frame(apply(df * 100, MARGIN=2, as.integer), row.names = rownames(df)))
 }

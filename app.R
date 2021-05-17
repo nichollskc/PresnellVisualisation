@@ -2,6 +2,7 @@ library(shiny)
 library(ggplot2)
 library(plotly)
 library(dplyr)
+library(tidyr)
 library(heatmaply)
 library(limma)
 
@@ -18,6 +19,7 @@ pathway_info <- gene_info %>% select(-one_of("Ensembl", "ensembl", "GeneSymbol",
 pathway_enrichment <- calculate_pathway_enrichment(SSLB_result, pathway_info)
 pathway_enrichment <- add_odds_ratio_and_counts(pathway_enrichment, SSLB_result, pathway_info)
 
+total_sample_counts <- count_samples_by_type(sample_info)
 
 ui <- fluidPage(
   titlePanel("Biclustering on Presnell sorted blood cell dataset"),
@@ -28,6 +30,7 @@ ui <- fluidPage(
       htmlOutput("summary_text")
     ),
     mainPanel(
+      plotlyOutput("sample_heatmap"),
       dataTableOutput("pathways_table"),
       plotlyOutput("factorcontribution_heatmap"),
       dataTableOutput("nz_samples_table"),
@@ -52,7 +55,7 @@ server <- function(input, output) {
     abs_factor_column <- paste0("abs_factor_", input$factor)
     sample_info_with_fac %>%
       arrange(desc(!!as.name(factor_column))) %>%
-      select("sample_description", "sex", "disease", "cell", "treatment", "age",
+      select("sample_description", "sex", "short_disease", "cell", "treatment", "age",
              factor_column, abs_factor_column)
   })
   sorted_samples_nz <- reactive({
@@ -90,6 +93,34 @@ server <- function(input, output) {
     factor_cont[rownames(sorted_samples_nz()), rownames(sorted_genes_nz())]
   })
   
+  
+  output$sample_heatmap <- renderPlotly({
+    factor_sample_counts <- count_samples_by_type(sorted_samples_nz())
+    factor_sample_proportions <- calculate_proportions_sample_types(sample_info_with_fac,
+                                                                    input$factor)
+    
+    sex_hm <- heatmaply(factor_sample_proportions$by_sex_disease,
+                        scale_fill_gradient_fun = scale_fill_gradient(low="white",
+                                                                      high="firebrick",
+                                                                      limits=c(0, 1)),
+                        Rowv=FALSE, Colv=FALSE,
+                        hide_colorbar = TRUE,
+                        grid_gap = 1,
+                        cellnote_size = 20,
+                        cellnote=proportions_to_integral_percentages(factor_sample_proportions$by_sex_disease))
+    cell_hm <- heatmaply(factor_sample_proportions$by_cell_disease,
+                         scale_fill_gradient_fun = scale_fill_gradient(low="white",
+                                                                       high="dodgerblue",
+                                                                       limits=c(0, 1)),
+                         Rowv=FALSE, Colv=FALSE,
+                         # Omit tick labels for cell heatmap
+                         showticklabels = c(FALSE, TRUE),
+                         hide_colorbar = TRUE,
+                         grid_gap=1,
+                         cellnote_size = 20,
+                         cellnote=proportions_to_integral_percentages(factor_sample_proportions$by_cell_disease))
+    subplot(cell_hm, sex_hm, nrows=2, heights=c(5/7, 2/7))
+  })
   output$factorcontribution_heatmap <- renderPlotly({
     heatmaply(nz_factor_contribution_sorted(),
               # Don't apply clustering to rows and columns since we've already sorted
