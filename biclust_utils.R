@@ -77,6 +77,8 @@ add_row_col_names <- function(biclustering, gene_symbols, sample_names) {
   rownames(biclustering$X) <- sample_names
   colnames(biclustering$X) <- paste("factor", 1:biclustering$K, sep="_")
   colnames(biclustering$B) <- paste("factor", 1:biclustering$K, sep="_")
+  
+  return(biclustering)
 }
 
 generate_gene_info_with_fac <- function(biclustering, gene_info) {
@@ -99,10 +101,10 @@ generate_sample_info_with_fac <- function(biclustering, sample_info) {
 
 calculate_pathway_enrichment <- function(biclustering, pathway_info) {
   total_rows <- biclustering$K * ncol(pathway_info)
-  pathway_enrichment <- data.frame(pathway_name=rep("", total_rows),
-                                   factor_index=rep(NA, total_rows),
-                                   genesettest_pvalue=rep(NA, total_rows),
-                                   camerapr_pvalue=rep(NA, total_rows))
+  pathway_enrichment <- data.frame(PathwayName=rep("", total_rows),
+                                   FactorIndex=rep(NA, total_rows),
+                                   CameraPR_pvalue=rep(NA, total_rows),
+                                   GeneSetTest_pvalue=rep(NA, total_rows))
 
   design <- model.matrix( ~ cell, sample_info)
 
@@ -117,30 +119,31 @@ calculate_pathway_enrichment <- function(biclustering, pathway_info) {
                                   genes_in_pathway)$PValue
       pathway_enrichment[index, ] = list(pathway_name,
                                          factor_index,
-                                         genesettest_pvalue,
-                                         camerapr_pvalue)
+                                         camerapr_pvalue,
+                                         genesettest_pvalue)
       index = index + 1
     }
   }
   
-  pathway_enrichment$camerapr_qvalue <- p.adjust(pathway_enrichment$camerapr_pvalue,
+  pathway_enrichment$CameraPR_qvalue <- p.adjust(pathway_enrichment$CameraPR_pvalue,
                                                  method="BY")
-  pathway_enrichment$genesettest_qvalue <- p.adjust(pathway_enrichment$genesettest_pvalue,
+  pathway_enrichment$GeneSetTest_qvalue <- p.adjust(pathway_enrichment$GeneSetTest_pvalue,
                                                     method="BY")
 
   return(pathway_enrichment)
 }
 
 add_odds_ratio_and_counts <- function(pathway_enrichment, biclustering, pathway_info) {
-  pathway_enrichment$pathway_total <- rep(colSums(pathway_info), times=biclustering$K)
-  pathway_enrichment$factor_total <- rep(colSums(biclustering$B != 0), each=ncol(pathway_info))
+  pathway_enrichment$GenesInPathway <- rep(colSums(pathway_info), times=biclustering$K)
+  pathway_enrichment$GenesInFactor <- rep(colSums(biclustering$B != 0), each=ncol(pathway_info))
   intersections = t(as.matrix(pathway_info)) %*% as.matrix(biclustering$B != 0)
-  pathway_enrichment$intersection <- as.numeric(intersections)
-  factor_not_pathway <- pathway_enrichment$factor_total - pathway_enrichment$intersection
-  odds_in_factor <- pathway_enrichment$intersection / factor_not_pathway
+  pathway_enrichment$GenesInIntersection <- as.numeric(intersections)
+  factor_not_pathway <- pathway_enrichment$GenesInFactor - pathway_enrichment$GenesInIntersection
+  odds_in_factor <- pathway_enrichment$GenesInIntersection / factor_not_pathway
   
-  pathway_not_factor <- pathway_enrichment$pathway_total - pathway_enrichment$intersection
-  neither <- nrow(pathway_info) - pathway_enrichment$intersection - factor_not_pathway - pathway_not_factor
+  pathway_not_factor <- pathway_enrichment$GenesInPathway - pathway_enrichment$GenesInIntersection
+  neither <- nrow(pathway_info) - pathway_enrichment$GenesInIntersection - factor_not_pathway - pathway_not_factor
   odds_out_factor <- pathway_not_factor / neither
-  pathway_enrichment$odds_ratio <- odds_in_factor / odds_out_factor
+  pathway_enrichment$OddsRatio <- odds_in_factor / odds_out_factor
+  return(pathway_enrichment)
 }

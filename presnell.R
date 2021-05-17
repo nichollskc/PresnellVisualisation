@@ -19,5 +19,5 @@ rownames(gene_info) <- gene_symbols
 
 Y <- read_matrix_from_folder("/Users/kath/docs/PhD/biclustering/E-GEOD-60424/data/real/presnell/deseq_sf/raw/expressed/tensor",
                              "Y.txt")
-colnames(Y) <- gene_symbolsY
+colnames(Y) <- gene_symbols
 rownames(Y) <- sample_names
