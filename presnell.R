@@ -15,6 +15,7 @@ colnames(gene_info) <- gsub("...Homo.sapiens..human..", "", colnames(gene_info))
 # Gene symbols, but for the 28 genes which do not have a unique gene symbol (14 which are duplicated)
 # add a suffix ___1 to the second such gene
 gene_symbols <- make.unique(gene_info$GeneSymbol, sep="___")
+rownames(gene_info) <- gene_symbols
 
 Y <- read_matrix_from_folder("/Users/kath/docs/PhD/biclustering/E-GEOD-60424/data/real/presnell/deseq_sf/raw/expressed/tensor",
                              "Y.txt")

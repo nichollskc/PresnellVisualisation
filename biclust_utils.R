@@ -122,6 +122,25 @@ calculate_pathway_enrichment <- function(biclustering, pathway_info) {
       index = index + 1
     }
   }
+  
+  pathway_enrichment$camerapr_qvalue <- p.adjust(pathway_enrichment$camerapr_pvalue,
+                                                 method="BY")
+  pathway_enrichment$genesettest_qvalue <- p.adjust(pathway_enrichment$genesettest_pvalue,
+                                                    method="BY")
 
   return(pathway_enrichment)
+}
+
+add_odds_ratio_and_counts <- function(pathway_enrichment, biclustering, pathway_info) {
+  pathway_enrichment$pathway_total <- rep(colSums(pathway_info), times=biclustering$K)
+  pathway_enrichment$factor_total <- rep(colSums(biclustering$B != 0), each=ncol(pathway_info))
+  intersections = t(as.matrix(pathway_info)) %*% as.matrix(biclustering$B != 0)
+  pathway_enrichment$intersection <- as.numeric(intersections)
+  factor_not_pathway <- pathway_enrichment$factor_total - pathway_enrichment$intersection
+  odds_in_factor <- pathway_enrichment$intersection / factor_not_pathway
+  
+  pathway_not_factor <- pathway_enrichment$pathway_total - pathway_enrichment$intersection
+  neither <- nrow(pathway_info) - pathway_enrichment$intersection - factor_not_pathway - pathway_not_factor
+  odds_out_factor <- pathway_not_factor / neither
+  pathway_enrichment$odds_ratio <- odds_in_factor / odds_out_factor
 }

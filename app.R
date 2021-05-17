@@ -14,6 +14,11 @@ add_row_col_names(SSLB_result, gene_symbols, sample_names)
 sample_info_with_fac <- generate_sample_info_with_fac(SSLB_result, sample_info)
 gene_info_with_fac <- generate_gene_info_with_fac(SSLB_result, gene_info)
 
+pathway_info <- gene_info %>% select(-one_of("Ensembl", "ensembl", "GeneSymbol", "annotated"))
+pathway_enrichment <- calculate_pathway_enrichment(SSLB_result, pathway_info)
+add_odds_ratio_and_counts(pathway_enrichment, SSLB_result, pathway_info)
+
+
 ui <- fluidPage(
   titlePanel("Biclustering on Presnell sorted blood cell dataset"),
   sidebarLayout(
@@ -22,6 +27,7 @@ ui <- fluidPage(
                    value=11, min=1, max=SSLB_result$K, step=1),
     ),
     mainPanel(
+      dataTableOutput("pathways_table"),
       plotlyOutput("factorcontribution_heatmap"),
       dataTableOutput("nz_samples_table"),
       dataTableOutput("nz_genes_table"),
@@ -56,7 +62,7 @@ server <- function(input, output) {
 
   sorted_genes <- reactive({
     enriched_pathway_names <- enriched_pathways() %>%
-      filter(pvalue < 0.05) %>%
+      filter(camerapr_qvalue < 0.05) %>%
       colnames()
 
     factor_column <- paste0("factor_", input$factor)
@@ -88,6 +94,9 @@ server <- function(input, output) {
   })
   output$nz_genes_table <- renderDataTable({
     sorted_genes_nz()
+  })
+  output$pathways_table <- renderDataTable({
+    enriched_pathways()
   })
 }
 
