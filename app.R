@@ -9,6 +9,7 @@ library(tidyr)
 library(heatmaply)
 library(limma)
 library(shinydashboard)
+library(shinyjs)
 
 source("biclust_utils.R")
 source("presnell.R")
@@ -70,6 +71,20 @@ ui <- dashboardPage(
     htmlOutput("summary_text")
   ),
   dashboardBody(
+    # Allow custom JS script to collapse box when you click on header
+    useShinyjs(),
+    # Darken header on hover to make it more obvious you can click
+    tags$style(HTML("
+                    .box-header {
+                    padding: 0 10px 0 0;
+                    }
+                    .box-header:hover {
+                    filter: brightness(80%);
+                    }
+                    .box-header h3 {
+                    width: 100%;
+                    padding: 10px;
+                    }")),
     fluidRow(
       column(width=6,
         sample_heatmap_output,
@@ -170,6 +185,15 @@ server <- function(input, output) {
               sum(nz_genes()))
     )
   })
+  
+  # JS code to collapse box when you click on header
+  runjs("
+          $('.box').on('click', '.box-header h3', function() {
+        $(this).closest('.box')
+        .find('[data-widget=collapse]')
+        .click();
+        });")
+  
 }
 
 shinyApp(ui = ui, server = server)
