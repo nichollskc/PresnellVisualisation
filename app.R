@@ -37,7 +37,8 @@ ui <- fluidPage(
       div(paste0("Types of samples included in the factor, broken down by disease, ",
                  "cell type and sex. The numbers in the cells give the percentage of samples",
                  " of that type which are contained in this factor. The darker the colour ", 
-                 "(red for sex, or blue for cell type), the higher this percentage.")),
+                 "(red for sex, or blue for cell type), the higher this percentage.",
+                 "Grey represents sample types not present in the dataset.")),
       plotlyOutput("sample_heatmap"),
       
       h2("Enriched pathways"),
@@ -120,32 +121,9 @@ server <- function(input, output) {
     factor_sample_counts <- count_samples_by_type(sorted_samples_nz())
     factor_sample_proportions <- calculate_proportions_sample_types(sample_info_with_fac,
                                                                     input$factor)
-    print(factor_sample_proportions)
+    sex_hm <- sample_heatmap(factor_sample_proportions$by_sex_disease, "firebrick")
+    cell_hm <- sample_heatmap(factor_sample_proportions$by_cell_disease, "dodgerblue")
     
-    sex_hm <- heatmaply(factor_sample_proportions$by_sex_disease,
-                        scale_fill_gradient_fun = scale_fill_gradient2(low="grey",
-                                                                       midpoint=0,
-                                                                      high="firebrick",
-                                                                      limits=c(-1, 1)),
-                        Rowv=FALSE, Colv=FALSE,
-                        hide_colorbar = TRUE,
-                        grid_gap = 1,
-                        cellnote_size = 20,
-                        cellnote_textposition = "middle center",
-                        cellnote=proportions_to_integral_percentages(factor_sample_proportions$by_sex_disease))
-    cell_hm <- heatmaply(factor_sample_proportions$by_cell_disease,
-                         scale_fill_gradient_fun = scale_fill_gradient2(low="grey",
-                                                                       midpoint=0,
-                                                                       high="dodgerblue",
-                                                                       limits=c(-1, 1)),
-                         Rowv=FALSE, Colv=FALSE,
-                         # Omit tick labels for cell heatmap
-                         showticklabels = c(FALSE, TRUE),
-                         hide_colorbar = TRUE,
-                         grid_gap=1,
-                         cellnote_size = 20,
-                         cellnote_textposition = "middle center",
-                         cellnote=proportions_to_integral_percentages(factor_sample_proportions$by_cell_disease))
     subplot(cell_hm, sex_hm, nrows=2, heights=c(5/7, 2/7))
   })
   output$factorcontribution_heatmap <- renderPlotly({

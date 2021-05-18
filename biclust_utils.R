@@ -197,5 +197,30 @@ calculate_proportions_sample_types <- function(sample_info_with_fac, factor_inde
 }
 
 proportions_to_integral_percentages <- function(df) {
-  return(data.frame(apply(df * 100, MARGIN=2, as.integer), row.names = rownames(df)))
+  percentages <- data.frame(apply(df * 100, MARGIN=2, as.integer), row.names = rownames(df))
+  
+  text <- percentages %>% apply(MARGIN=2, FUN=as.character)
+  text[is.na(percentages) | percentages == "0"] <- ""
+  
+  percentages[is.na(percentages)] <- -100
+  return(list("percentages" = percentages,
+              "text" = text))
+}
+
+
+sample_heatmap <- function(sample_type_proportions, colour) {
+  sample_percentages <- proportions_to_integral_percentages(sample_type_proportions)
+  
+  hm <- heatmaply(sample_percentages$percentages,
+                      scale_fill_gradient_fun = scale_fill_gradient2(low="grey50",
+                                                                     midpoint=0,
+                                                                     high=colour,
+                                                                     limits=c(-100, 100)),
+                      Rowv=FALSE, Colv=FALSE,
+                      hide_colorbar = TRUE,
+                      grid_gap = 1,
+                      cellnote_size = 20,
+                      cellnote_textposition = "middle center",
+                      cellnote=sample_percentages$text)
+  return(hm)
 }
