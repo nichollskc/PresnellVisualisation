@@ -29,14 +29,33 @@ ui <- fluidPage(
   sidebarLayout(
     sidebarPanel(
       numericInput(inputId="factor", label="Factor",
-                   value=11, min=1, max=SSLB_result$K, step=1),
+                   value=12, min=1, max=SSLB_result$K, step=1),
       htmlOutput("summary_text")
     ),
     mainPanel(
+      h2("Sample types"),
+      div(paste0("Types of samples included in the factor, broken down by disease, ",
+                 "cell type and sex. The numbers in the cells give the percentage of samples",
+                 " of that type which are contained in this factor. The darker the colour ", 
+                 "(red for sex, or blue for cell type), the higher this percentage.")),
       plotlyOutput("sample_heatmap"),
+      
+      h2("Enriched pathways"),
+      div(paste0("Pathways with strongest enrichment (measured by the q-value returned by ",
+                 "CameraPR) in this factor.")),
       dataTableOutput("pathways_table"),
+      
+      h2("Factor contribution"),
+      div(paste0("Heatmap showing the values this factor contributes to the overall ",
+                 "reconstruction of the original matrix. Constructed by $x_k b_k^T$ ",
+                 "where $x_k$ is the length n vector giving sample loadings and ",
+                 "$b_k$ is the length p vector giving gene loadings.")),
       plotlyOutput("factorcontribution_heatmap"),
+      
+      h2("Samples table"),
       dataTableOutput("nz_samples_table"),
+      
+      h2("Genes table"),
       dataTableOutput("nz_genes_table"),
     )
   )

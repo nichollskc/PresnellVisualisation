@@ -8,6 +8,9 @@ sample_info$age <- sample_info$Characteristics..age.
 # We found that all samples with no sex given are in fact male, as can be told by
 # the expression of genes on Y chromosome such as DDX3Y
 sample_info$sex <- replace(sample_info$sex, sample_info$sex == "  ", "male")
+sample_info$cell <- factor(sample_info$cell)
+sample_info$sex <- factor(sample_info$sex)
+sample_info$disease <- factor(sample_info$disease)
 
 sample_names <- sample_info[['sample_description']]
 gene_info <- read.csv("data/real/presnell/deseq_sf/raw/expressed/tensor/gene_info.txt",
