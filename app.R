@@ -1,3 +1,6 @@
+library(BiocManager)
+options(repos = BiocManager::repositories())
+
 library(shiny)
 library(ggplot2)
 library(plotly)
@@ -6,7 +9,6 @@ library(tidyr)
 library(heatmaply)
 library(limma)
 
-setwd("~/docs/PhD/PresnellVisualisation/")
 source("biclust_utils.R")
 source("presnell.R")
 
@@ -16,8 +18,9 @@ sample_info_with_fac <- generate_sample_info_with_fac(SSLB_result, sample_info)
 gene_info_with_fac <- generate_gene_info_with_fac(SSLB_result, gene_info)
 
 pathway_info <- gene_info %>% select(-one_of("Ensembl", "ensembl", "GeneSymbol", "annotated"))
-pathway_enrichment <- calculate_pathway_enrichment(SSLB_result, pathway_info)
-pathway_enrichment <- add_odds_ratio_and_counts(pathway_enrichment, SSLB_result, pathway_info)
+load("pathway_enrichment.Rda")
+#pathway_enrichment <- calculate_pathway_enrichment(SSLB_result, pathway_info)
+#pathway_enrichment <- add_odds_ratio_and_counts(pathway_enrichment, SSLB_result, pathway_info)
 
 total_sample_counts <- count_samples_by_type(sample_info)
 
@@ -98,26 +101,31 @@ server <- function(input, output) {
     factor_sample_counts <- count_samples_by_type(sorted_samples_nz())
     factor_sample_proportions <- calculate_proportions_sample_types(sample_info_with_fac,
                                                                     input$factor)
+    print(factor_sample_proportions)
     
     sex_hm <- heatmaply(factor_sample_proportions$by_sex_disease,
-                        scale_fill_gradient_fun = scale_fill_gradient(low="white",
+                        scale_fill_gradient_fun = scale_fill_gradient2(low="grey",
+                                                                       midpoint=0,
                                                                       high="firebrick",
-                                                                      limits=c(0, 1)),
+                                                                      limits=c(-1, 1)),
                         Rowv=FALSE, Colv=FALSE,
                         hide_colorbar = TRUE,
                         grid_gap = 1,
                         cellnote_size = 20,
+                        cellnote_textposition = "middle center",
                         cellnote=proportions_to_integral_percentages(factor_sample_proportions$by_sex_disease))
     cell_hm <- heatmaply(factor_sample_proportions$by_cell_disease,
-                         scale_fill_gradient_fun = scale_fill_gradient(low="white",
+                         scale_fill_gradient_fun = scale_fill_gradient2(low="grey",
+                                                                       midpoint=0,
                                                                        high="dodgerblue",
-                                                                       limits=c(0, 1)),
+                                                                       limits=c(-1, 1)),
                          Rowv=FALSE, Colv=FALSE,
                          # Omit tick labels for cell heatmap
                          showticklabels = c(FALSE, TRUE),
                          hide_colorbar = TRUE,
                          grid_gap=1,
                          cellnote_size = 20,
+                         cellnote_textposition = "middle center",
                          cellnote=proportions_to_integral_percentages(factor_sample_proportions$by_cell_disease))
     subplot(cell_hm, sex_hm, nrows=2, heights=c(5/7, 2/7))
   })

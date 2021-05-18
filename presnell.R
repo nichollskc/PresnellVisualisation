@@ -1,7 +1,7 @@
-main_run <- "/Users/kath/docs/PhD/biclustering/E-GEOD-60424/results/SSLB/real/presnell/deseq_sf/raw/expressed/tensor/run_seed_8080_K_60"
+main_run <- "results/SSLB/real/presnell/deseq_sf/raw/expressed/tensor/run_seed_8080_K_60"
 
 
-sample_info <- read.csv("/Users/kath/docs/PhD/biclustering/E-GEOD-60424/data/real/presnell/deseq_sf/raw/expressed/tensor/sample_info_tidied.txt",
+sample_info <- read.csv("data/real/presnell/deseq_sf/raw/expressed/tensor/sample_info_tidied.txt",
                        sep='\t')
 sample_info$age <- sample_info$Characteristics..age.
 
@@ -10,7 +10,7 @@ sample_info$age <- sample_info$Characteristics..age.
 sample_info$sex <- replace(sample_info$sex, sample_info$sex == "  ", "male")
 
 sample_names <- sample_info[['sample_description']]
-gene_info <- read.csv("/Users/kath/docs/PhD/biclustering/E-GEOD-60424/data/real/presnell/deseq_sf/raw/expressed/tensor/gene_info.txt",
+gene_info <- read.csv("data/real/presnell/deseq_sf/raw/expressed/tensor/gene_info.txt",
                       sep="\t",
                       stringsAsFactors = FALSE)
 colnames(gene_info) <- gsub("ID..hsa\\d+.NAME..", "", colnames(gene_info))
@@ -21,7 +21,7 @@ colnames(gene_info) <- gsub("...Homo.sapiens..human..", "", colnames(gene_info))
 gene_symbols <- make.unique(gene_info$GeneSymbol, sep="___")
 rownames(gene_info) <- gene_symbols
 
-Y <- read_matrix_from_folder("/Users/kath/docs/PhD/biclustering/E-GEOD-60424/data/real/presnell/deseq_sf/raw/expressed/tensor",
+Y <- read_matrix_from_folder("data/real/presnell/deseq_sf/raw/expressed/tensor",
                              "Y.txt")
 colnames(Y) <- gene_symbols
 rownames(Y) <- sample_names
