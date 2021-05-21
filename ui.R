@@ -4,10 +4,6 @@ library(heatmaply)
 library(shinydashboard)
 library(shinyjs)
 
-main_run <- "results/SSLB/real/presnell/deseq_sf/raw/expressed/tensor/run_seed_8080_K_60"
-source("biclust_utils.R")
-K <- read_matrix_from_folder(main_run, "K.txt")[1, 1]
-
 numericSpinnerInput <- function(inputId, value = 0) {
   tagList(
     singleton(tags$head(tags$script(src = "js/numeric_spinner.js"))),
@@ -64,10 +60,13 @@ gene_table_output <- box(title="Genes table",
 ui <- dashboardPage(
   dashboardHeader(title="Biclustering on Presnell sorted blood cell dataset"),
   dashboardSidebar(
-    numericInput(inputId="factor", label="Factor",
-                 value=12, min=1, max=K, step=1),
-    numericSpinnerInput("spin_spin", 1),
-    htmlOutput("summary_text")
+    div(
+      tags$label("Factor:"),
+      numericSpinnerInput("factor", 1),
+    ),
+    div(
+      htmlOutput("summary_text")
+    )
   ),
   dashboardBody(
     # Allow custom JS script to collapse box when you click on header
@@ -78,6 +77,7 @@ ui <- dashboardPage(
 #        tags$script(src="js/jquery-ui-1.12.1.custom/external/jquery/jquery.js"),
         tags$script(src="js/jquery-ui-1.12.1.custom/jquery-ui.js"),
         tags$link(rel = "stylesheet", type = "text/css", href = "js/jquery-ui-1.12.1.custom/jquery-ui.css"),
+        tags$link(rel = "stylesheet", type = "text/css", href = "css/biclust.css"),
     ),
     # Darken header on hover to make it more obvious you can click
     tags$style(HTML("

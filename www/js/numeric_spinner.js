@@ -1,14 +1,20 @@
 $( function() {
-    $( "#spin_spin" ).spinner( {
+    $( ".spinner" ).spinner( {
         min: 1,
         max: 60,
     });
+
+    // Make sure the spinner updates on arrow clicking too
+   $('.ui-spinner-button').click(function() {
+       $(this).siblings('input').change();
+   });
 });
+
 
 var spinnerBinding = new Shiny.InputBinding();
 $.extend(spinnerBinding, {
   find: function(scope) {
-    return $(scope).find("#spin_spin");
+    return $(scope).find(".spinner");
   },
   getValue: function(el) {
     return parseInt($(el).spinner("value"));
