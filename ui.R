@@ -34,13 +34,16 @@ pathways_table_output <- box(title="Enriched pathways",
 )
 
 factorcontribution_output <- box(title="Factor contribution",
+                                 id="factorcontribution_box",
                                  div(paste0("Heatmap showing the values this factor contributes to the overall ",
                                             "reconstruction of the original matrix. Constructed by $x_k b_k^T$ ",
                                             "where $x_k$ is the length n vector giving sample loadings and ",
                                             "$b_k$ is the length p vector giving gene loadings.")),
                                  plotlyOutput("factorcontribution_heatmap"),
-                                 selectInput("factorcontribution_trans", "Transformation:", c("Raw", "Log"), "Raw"),
-                                 selectInput("factorcontribution_scale", "Scale:", c("Auto", "Shared"), "Auto"),
+                                 selectInput("factorcontribution_trans", "Transformation for colour scale:",
+                                             c("No transformation", "Log transformation"), "No transformation"),
+                                 selectInput("factorcontribution_scale", "Max/min defined by:",
+                                             c("This factor", "All factors"), "This factor"),
                                  collapsible=TRUE, solidHeader = TRUE, status="primary", width=NULL,
 )
 

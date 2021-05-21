@@ -16,3 +16,8 @@
 .main-sidebar div {
     padding: 0.5em;
 }
+
+#factorcontribution_box .shiny-input-container {
+    float: left;
+    width: 50%;
+}

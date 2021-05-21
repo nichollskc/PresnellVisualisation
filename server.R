@@ -101,14 +101,14 @@ server <- function(input, output) {
   })
   output$factorcontribution_heatmap <- renderPlotly({
 
-    if (input$factorcontribution_scale == "Auto") {
+    if (input$factorcontribution_scale == "This factor") {
       max_value <- max(abs(nz_factor_contribution_sorted()))
     } else {
       max_value <- max(factor_contribution_maxes)
     }
     limits <- c(-max_value, max_value)
     
-    if (input$factorcontribution_trans == "Raw") {
+    if (input$factorcontribution_trans == "No transformation") {
       transformation = "identity"
       breaks = neat_symmetric_cbar_breaks(max_value)
     } else {
