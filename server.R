@@ -29,6 +29,8 @@ load("pathway_enrichment.Rda")
 
 total_sample_counts <- count_samples_by_type(sample_info)
 factor_contribution_maxes <- apply(SSLB_result$X, 2, max) * apply(SSLB_result$B, 2, max)
+total_counts_sex_disease <- counts_by_variables(sample_info_with_fac, "sex", "disease")
+total_counts_cell_disease <- counts_by_variables(sample_info_with_fac, "cell", "disease")
 
 #################################################################################################
 # Server - processing data and generating plots                                                 #
@@ -91,11 +93,11 @@ server <- function(input, output) {
   # Defining plots                                                                                #
   #################################################################################################
   output$sample_heatmap <- renderPlotly({
-    factor_sample_counts <- count_samples_by_type(sorted_samples_nz())
-    factor_sample_proportions <- calculate_proportions_sample_types(sample_info_with_fac,
-                                                                    input$factor)
-    sex_hm <- sample_heatmap(factor_sample_proportions$by_sex_disease, "red")
-    cell_hm <- sample_heatmap(factor_sample_proportions$by_cell_disease, "#08488e")
+    factor_counts_sex_disease <- counts_by_variables(sample_info_with_fac, "sex", "disease", input$factor)
+    factor_counts_cell_disease <- counts_by_variables(sample_info_with_fac, "cell", "disease", input$factor)
+    
+    sex_hm <- sample_heatmap(total_counts_sex_disease, factor_counts_sex_disease, "red")
+    cell_hm <- sample_heatmap(total_counts_cell_disease, factor_counts_cell_disease, "blue")
     
     subplot(cell_hm, sex_hm, nrows=2, heights=c(5/7, 2/7))
   })

@@ -65,7 +65,7 @@ ui <- dashboardPage(
   dashboardSidebar(
     div(
       tags$label("Factor:"),
-      numericSpinnerInput("factor", 1),
+      numericSpinnerInput("factor", 12),
     ),
     div(
       htmlOutput("summary_text")

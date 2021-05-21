@@ -168,32 +168,33 @@ count_samples_by_type <- function(sample_info) {
               "by_sex_disease"=total_sample_counts_by_sex_disease))
 }
 
-calculate_proportions_sample_types <- function(sample_info_with_fac, factor_index) {
-  sample_info_with_fac$in_factor <- factor(sample_info_with_fac[[paste0("factor_", factor_index)]] != 0)
-  proportions_by_cell_disease <- sample_info_with_fac %>%
-    group_by(cell, short_disease, in_factor, .drop=FALSE) %>%
-    summarise(n=n()) %>%
-    mutate(freq=n/sum(n)) %>%
-    select(cell, short_disease, freq, in_factor) %>%
-    pivot_wider(names_from=short_disease, values_from=freq) %>%
-    filter(in_factor == TRUE) %>%
-    select(-in_factor) %>%
-    column_to_rownames(var="cell") %>%
+counts_by_variables <- function(sample_info_with_fac, groupvar_1, groupvar_2, factor_index=NULL) {
+  if (! is.null(factor_index)) {
+    sample_info_with_fac$included <- factor(sample_info_with_fac[[paste0("factor_", factor_index)]] != 0)  
+  } else {
+    sample_info_with_fac$included <- TRUE
+  }
+  
+  counts <- sample_info_with_fac %>%
+    # Group by the two variables we eventually want as rows/columns and also by "included"
+    # We do .drop=F to keep all groups that exist in the dataset, even if not present in our factor
+    group_by(!!as.name(groupvar_1), !!as.name(groupvar_2), included, .drop=FALSE) %>%
+    # Count by group
+    summarise(count=n()) %>%
+    # Restrict to the columns we want and then pivot to go from "each row is a group" to
+    # essentially a 2D grid, with groupvar_1 as rows, groupvar_2 as columns
+    #   (plus extra columns we will get rid of soon)
+    select(!!as.name(groupvar_1), !!as.name(groupvar_2), count, included) %>%
+    pivot_wider(names_from=groupvar_2, values_from=count) %>%
+    # Finally, restrict to rows that should be included and then we can discard this column
+    filter(included == TRUE) %>%
+    select(-included) %>%
+    # Use groupvar_1 as rownames
+    column_to_rownames(var=groupvar_1) %>%
+    # Put column names in alpahbetical order
     select(order(colnames(.)))
   
-  proportions_by_sex_disease <- sample_info_with_fac %>%
-    group_by(sex, short_disease, in_factor, .drop=FALSE) %>%
-    summarise(n=n()) %>%
-    mutate(freq=n/sum(n)) %>%
-    select(sex, short_disease, freq, in_factor) %>%
-    pivot_wider(names_from=short_disease, values_from=freq) %>%
-    filter(in_factor == TRUE) %>%
-    select(-in_factor) %>%
-    column_to_rownames(var="sex") %>%
-    select(order(colnames(.)))
-  
-  return(list("by_cell_disease"=proportions_by_cell_disease,
-              "by_sex_disease"=proportions_by_sex_disease))
+  return(counts)
 }
 
 proportions_to_integral_percentages <- function(df) {
