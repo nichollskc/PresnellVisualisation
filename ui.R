@@ -8,13 +8,12 @@ main_run <- "results/SSLB/real/presnell/deseq_sf/raw/expressed/tensor/run_seed_8
 source("biclust_utils.R")
 K <- read_matrix_from_folder(main_run, "K.txt")[1, 1]
 
-incrementButton <- function(inputId, value = 0) {
+numericSpinnerInput <- function(inputId, value = 0) {
   tagList(
-    singleton(tags$head(tags$script(src = "js/increment.js"))),
-    tags$button(id = inputId,
-                class = "increment btn btn-default",
-                type = "button",
-                as.character(value))
+    singleton(tags$head(tags$script(src = "js/numeric_spinner.js"))),
+    tags$input(id = inputId,
+               class = "spinner",
+               value = as.character(value))
   )
 }
 
@@ -65,20 +64,21 @@ gene_table_output <- box(title="Genes table",
 ui <- dashboardPage(
   dashboardHeader(title="Biclustering on Presnell sorted blood cell dataset"),
   dashboardSidebar(
-    # numericInput(inputId="factor", label="Factor",
-    #              value=12, min=1, max=K, step=1),
-    incrementButton("factor", 1),
+    numericInput(inputId="factor", label="Factor",
+                 value=12, min=1, max=K, step=1),
+    numericSpinnerInput("spin_spin", 1),
     htmlOutput("summary_text")
   ),
   dashboardBody(
     # Allow custom JS script to collapse box when you click on header
     useShinyjs(),
     
-    # # # Include jquery core
-    # tags$head(
-    #     tags$script(src="js/jquery-ui-1.12.1.custom/external/jquery/jquery.js"),
-    #     tags$script(src="js/jquery-ui-1.12.1.custom/jquery-ui.js"),
-    # ),
+    # Include jquery core
+    tags$head(
+#        tags$script(src="js/jquery-ui-1.12.1.custom/external/jquery/jquery.js"),
+        tags$script(src="js/jquery-ui-1.12.1.custom/jquery-ui.js"),
+        tags$link(rel = "stylesheet", type = "text/css", href = "js/jquery-ui-1.12.1.custom/jquery-ui.css"),
+    ),
     # Darken header on hover to make it more obvious you can click
     tags$style(HTML("
                     .box-header {
