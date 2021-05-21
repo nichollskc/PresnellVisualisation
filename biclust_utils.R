@@ -201,6 +201,7 @@ proportions_to_integral_percentages <- function(df) {
   
   text <- percentages %>% apply(MARGIN=2, FUN=as.character)
   text[is.na(percentages) | percentages == "0"] <- ""
+  text[text != ""] <- paste0(text[text != ""], "%")
   
   percentages[is.na(percentages)] <- -100
   return(list("percentages" = percentages,

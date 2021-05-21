@@ -11,9 +11,13 @@ library(limma)
 library(shinydashboard)
 library(shinyjs)
 
+#setwd("~/docs/PhD/PresnellVisualisation")
 source("biclust_utils.R")
 source("presnell.R")
 
+#################################################################################################
+# Loading data                                                                                  #
+#################################################################################################
 SSLB_result <- read_thresholded_factor_matrices(main_run)
 SSLB_result <- add_row_col_names(SSLB_result, gene_symbols, sample_names)
 sample_info_with_fac <- generate_sample_info_with_fac(SSLB_result, sample_info)
@@ -25,23 +29,27 @@ load("pathway_enrichment.Rda")
 #pathway_enrichment <- add_odds_ratio_and_counts(pathway_enrichment, SSLB_result, pathway_info)
 
 total_sample_counts <- count_samples_by_type(sample_info)
+factor_contribution_maxes <- apply(SSLB_result$X, 2, max) * apply(SSLB_result$B, 2, max)
 
 
+#################################################################################################
+# Defining plot HTML objects                                                                    #
+#################################################################################################
 sample_heatmap_output <- box(title="Sample types",
-    collapsible=TRUE, solidHeader = TRUE, status="primary", width=NULL,
     div(paste0("Types of samples included in the factor, broken down by disease, ",
                "cell type and sex. The numbers in the cells give the percentage of samples",
                " of that type which are contained in this factor. The darker the colour ", 
                "(red for sex, or blue for cell type), the higher this percentage.",
                "Grey represents sample types not present in the dataset.")),
     plotlyOutput("sample_heatmap"),
+    collapsible=TRUE, solidHeader = TRUE, status="primary", width=NULL,
 )
 
 pathways_table_output <- box(title="Enriched pathways",
-    collapsible=TRUE, solidHeader = TRUE, status="primary", width=NULL,
     div(paste0("Pathways with strongest enrichment (measured by the q-value returned by ",
                "CameraPR) in this factor.")),
-    div(style = 'overflow-x: scroll', dataTableOutput("pathways_table"))
+    div(style = 'overflow-x: scroll', dataTableOutput("pathways_table")),
+    collapsible=TRUE, solidHeader = TRUE, status="primary", width=NULL,
 )
 
 factorcontribution_output <- box(title="Factor contribution",
@@ -50,6 +58,8 @@ factorcontribution_output <- box(title="Factor contribution",
                "where $x_k$ is the length n vector giving sample loadings and ",
                "$b_k$ is the length p vector giving gene loadings.")),
     plotlyOutput("factorcontribution_heatmap"),
+    selectInput("factorcontribution_trans", "Transformation:", c("Raw", "Log"), "Raw"),
+    selectInput("factorcontribution_scale", "Scale:", c("Auto", "Shared"), "Auto"),
     collapsible=TRUE, solidHeader = TRUE, status="primary", width=NULL,
 )
 
@@ -63,6 +73,9 @@ gene_table_output <- box(title="Genes table",
     collapsible=TRUE, solidHeader = TRUE, status="primary", width=NULL,
 )
 
+#################################################################################################
+# UI - Specifying HTML layout                                                                   #
+#################################################################################################
 ui <- dashboardPage(
   dashboardHeader(title="Biclustering on Presnell sorted blood cell dataset"),
   dashboardSidebar(
@@ -99,6 +112,9 @@ ui <- dashboardPage(
   )
 )
 
+#################################################################################################
+# Server - processing data and generating plots                                                 #
+#################################################################################################
 server <- function(input, output) {
   factor_contribution <- reactive({
     contribution <- calc_factor_contribution(SSLB_result, input$factor)
@@ -153,21 +169,43 @@ server <- function(input, output) {
     factor_cont[rownames(sorted_samples_nz()), rownames(sorted_genes_nz())]
   })
   
-  
+  #################################################################################################
+  # Defining plots                                                                                #
+  #################################################################################################
   output$sample_heatmap <- renderPlotly({
     factor_sample_counts <- count_samples_by_type(sorted_samples_nz())
     factor_sample_proportions <- calculate_proportions_sample_types(sample_info_with_fac,
                                                                     input$factor)
-    sex_hm <- sample_heatmap(factor_sample_proportions$by_sex_disease, "firebrick")
-    cell_hm <- sample_heatmap(factor_sample_proportions$by_cell_disease, "dodgerblue")
+    sex_hm <- sample_heatmap(factor_sample_proportions$by_sex_disease, "red")
+    cell_hm <- sample_heatmap(factor_sample_proportions$by_cell_disease, "#08488e")
     
     subplot(cell_hm, sex_hm, nrows=2, heights=c(5/7, 2/7))
   })
   output$factorcontribution_heatmap <- renderPlotly({
+
+    if (input$factorcontribution_scale == "Auto") {
+      max_value <- max(abs(nz_factor_contribution_sorted()))
+    } else {
+      max_value <- max(factor_contribution_maxes)
+    }
+    limits <- c(-max_value, max_value)
+    
+    if (input$factorcontribution_trans == "Raw") {
+      transformation = "identity"
+      breaks = neat_symmetric_cbar_breaks(max_value)
+    } else {
+      transformation = "pseudo_log"
+      breaks = neat_symmetric_cbar_breaks_log(max_value)
+    }
+    
     heatmaply(nz_factor_contribution_sorted(),
               # Don't apply clustering to rows and columns since we've already sorted
               Rowv=FALSE, Colv=FALSE,
-              scale_fill_gradient_fun = scale_fill_gradient2(low="blue", high="red", midpoint=0))
+              scale_fill_gradient_fun = scale_fill_gradient2(low="blue", high="red", midpoint=0,
+                                                             trans=transformation,
+                                                             limits=limits,
+                                                             breaks=breaks,
+              ))
   })
   output$nz_samples_table <- renderDataTable({
     sorted_samples_nz()
