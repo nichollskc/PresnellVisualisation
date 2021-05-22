@@ -209,20 +209,47 @@ proportions_to_integral_percentages <- function(df) {
               "text" = text))
 }
 
-
-sample_heatmap <- function(sample_type_proportions, colour) {
-  sample_percentages <- proportions_to_integral_percentages(sample_type_proportions)
+convert_percentage_text <- function(x) {
+  print(class(x))
+  print(x)
+  x[is.na(x) | x == 0] <- ""
+  x[x != ""] <- paste0(x[x != ""], "%")
   
-  hm <- heatmaply(sample_percentages$percentages,
-                      scale_fill_gradient_fun = scale_fill_gradient2(low="grey50",
-                                                                     midpoint=0,
-                                                                     high=colour,
-                                                                     limits=c(-100, 100)),
-                      Rowv=FALSE, Colv=FALSE,
-                      hide_colorbar = TRUE,
-                      grid_gap = 1,
-                      cellnote_size = 20,
-                      cellnote_textposition = "middle center",
-                      cellnote=sample_percentages$text)
-  return(hm)
+  return(x)
+}
+
+generate_hovertext_sample_groups <- function(total_count, factor_count, cell, disease) {
+  paste0("Sample type: ", cell, ", ", disease,
+         "<br>Samples in dataset: ", total_count,
+         "<br>Samples in factor: ", factor_count)
+}
+
+sample_heatmap <- function(total_counts, factor_counts, colour_palette) {
+  factor_counts_long <- factor_counts %>%
+    rownames_to_column("groupvar1") %>%
+    pivot_longer(-groupvar1, names_to="groupvar2", values_to="factor_count")
+  total_counts_long <- total_counts %>%
+    rownames_to_column("groupvar1") %>%
+    pivot_longer(-groupvar1, names_to="groupvar2", values_to="total_count")
+  sample_groups_info <- full_join(total_counts_long, factor_counts_long, by=c("groupvar1", "groupvar2")) %>%
+    mutate(proportion=factor_count/total_count,
+           percentage=as.integer(proportion * 100),
+           percentage_text=convert_percentage_text(percentage),
+           SampleGroup=generate_hovertext_sample_groups(total_count, factor_count, groupvar1, groupvar2))
+
+  hm <- ggplot(sample_groups_info,
+               aes(x=groupvar2, y=groupvar1, fill=percentage, label=percentage_text, text=SampleGroup)) +
+    geom_tile() +
+    geom_text() +
+    scale_fill_distiller(palette=colour_palette, direction=1,
+                         na.value="grey50",
+                         limits=c(0, 100),
+                         guide=FALSE) +
+    theme(panel.grid=element_blank(),
+          axis.title=element_blank(),
+          panel.background=element_blank())
+  with_hover <- ggplotly(tooltip="SampleGroup") %>%
+    layout(hoverlabel=list("font"=list("family"='sans-serif', "size"=25)))
+      
+  return(with_hover)
 }
