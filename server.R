@@ -9,28 +9,34 @@ library(tidyr)
 library(heatmaply)
 library(limma)
 
-#setwd("~/docs/PhD/PresnellVisualisation")
+setwd("~/docs/PhD/PresnellVisualisation")
 source("biclust_utils.R")
 source("plot_utils.R")
-source("presnell.R")
 
 #################################################################################################
-# Loading data                                                                                  #
+# Loading/generating data                                                                       #
 #################################################################################################
-SSLB_result <- read_thresholded_factor_matrices(main_run)
-SSLB_result <- add_row_col_names(SSLB_result, gene_symbols, sample_names)
-sample_info_with_fac <- generate_sample_info_with_fac(SSLB_result, sample_info)
-gene_info_with_fac <- generate_gene_info_with_fac(SSLB_result, gene_info)
-
-pathway_info <- gene_info %>% select(-one_of("Ensembl", "ensembl", "GeneSymbol", "annotated"))
-load("pathway_enrichment.Rda")
-#pathway_enrichment <- calculate_pathway_enrichment(SSLB_result, pathway_info)
-#pathway_enrichment <- add_odds_ratio_and_counts(pathway_enrichment, SSLB_result, pathway_info)
-
-total_sample_counts <- count_samples_by_type(sample_info)
-factor_contribution_maxes <- apply(SSLB_result$X, 2, max) * apply(SSLB_result$B, 2, max)
-total_counts_sex_disease <- counts_by_variables(sample_info_with_fac, "sex", "disease")
-total_counts_cell_disease <- counts_by_variables(sample_info_with_fac, "cell", "disease")
+load_data_from_file <- TRUE
+if (load_data_from_file) {
+  load("presnellVisualisation.Rda")  
+} else {
+  source("presnell.R")
+  SSLB_result <- read_thresholded_factor_matrices(main_run)
+  SSLB_result <- add_row_col_names(SSLB_result, gene_symbols, sample_names)
+  sample_info_with_fac <- generate_sample_info_with_fac(SSLB_result, sample_info)
+  gene_info_with_fac <- generate_gene_info_with_fac(SSLB_result, gene_info)
+  
+  pathway_info <- gene_info %>% select(-one_of("Ensembl", "ensembl", "GeneSymbol", "annotated"))
+  load("pathway_enrichment.Rda")
+  #pathway_enrichment <- calculate_pathway_enrichment(SSLB_result, pathway_info)
+  #pathway_enrichment <- add_odds_ratio_and_counts(pathway_enrichment, SSLB_result, pathway_info)
+  
+  factor_contribution_maxes <- apply(SSLB_result$X, 2, max) * apply(SSLB_result$B, 2, max)
+  total_counts_sex_disease <- counts_by_variables(sample_info_with_fac, "sex", "short_disease")
+  total_counts_cell_disease <- counts_by_variables(sample_info_with_fac, "cell", "short_disease")
+  
+  #save.image(file="presnellVisualisation.Rda")
+}
 
 #################################################################################################
 # Server - processing data and generating plots                                                 #
@@ -93,11 +99,11 @@ server <- function(input, output) {
   # Defining plots                                                                                #
   #################################################################################################
   output$sample_heatmap <- renderPlotly({
-    factor_counts_sex_disease <- counts_by_variables(sample_info_with_fac, "sex", "disease", input$factor)
-    factor_counts_cell_disease <- counts_by_variables(sample_info_with_fac, "cell", "disease", input$factor)
+    factor_counts_sex_disease <- counts_by_variables(sample_info_with_fac, "sex", "short_disease", input$factor)
+    factor_counts_cell_disease <- counts_by_variables(sample_info_with_fac, "cell", "short_disease", input$factor)
     
     sex_hm <- sample_heatmap(total_counts_sex_disease, factor_counts_sex_disease, "Reds")
-    cell_hm <- sample_heatmap(total_counts_cell_disease, factor_counts_cell_disease, "Blues")
+    cell_hm <- sample_heatmap(total_counts_cell_disease, factor_counts_cell_disease, "Blues", show_x_labels=FALSE)
     
     subplot(cell_hm, sex_hm, nrows=2, heights=c(5/7, 2/7))
   })

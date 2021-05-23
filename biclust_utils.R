@@ -194,6 +194,9 @@ counts_by_variables <- function(sample_info_with_fac, groupvar_1, groupvar_2, fa
     # Put column names in alpahbetical order
     select(order(colnames(.)))
   
+  # Replace any NA with 0
+  counts[is.na(counts)] <- 0
+  
   return(counts)
 }
 
@@ -224,7 +227,7 @@ generate_hovertext_sample_groups <- function(total_count, factor_count, cell, di
          "<br>Samples in factor: ", factor_count)
 }
 
-sample_heatmap <- function(total_counts, factor_counts, colour_palette) {
+sample_heatmap <- function(total_counts, factor_counts, colour_palette, show_x_labels=TRUE) {
   factor_counts_long <- factor_counts %>%
     rownames_to_column("groupvar1") %>%
     pivot_longer(-groupvar1, names_to="groupvar2", values_to="factor_count")
@@ -248,6 +251,11 @@ sample_heatmap <- function(total_counts, factor_counts, colour_palette) {
     theme(panel.grid=element_blank(),
           axis.title=element_blank(),
           panel.background=element_blank())
+  if (show_x_labels) {
+    hm <- hm + theme(axis.text.x=element_text(angle=45, hjust = "right"))
+  } else {
+    hm <- hm + theme(axis.text.x=element_blank())
+  }
   with_hover <- ggplotly(tooltip="SampleGroup") %>%
     layout(hoverlabel=list("font"=list("family"='sans-serif', "size"=25)))
       
