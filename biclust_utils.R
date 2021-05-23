@@ -223,8 +223,8 @@ convert_percentage_text <- function(x) {
 
 generate_hovertext_sample_groups <- function(total_count, factor_count, cell, disease) {
   paste0("Sample type: ", cell, ", ", disease,
-         "<br>Samples in dataset: ", total_count,
-         "<br>Samples in factor: ", factor_count)
+         "<br>Total in dataset: ", total_count,
+         "<br>In factor: ", factor_count)
 }
 
 sample_heatmap <- function(total_counts, factor_counts, colour, show_x_labels=TRUE) {
@@ -261,7 +261,7 @@ sample_heatmap <- function(total_counts, factor_counts, colour, show_x_labels=TR
     hm <- hm + theme(axis.text.x=element_blank())
   }
   with_hover <- ggplotly(tooltip="SampleGroup") %>%
-    layout(hoverlabel=list("font"=list("family"='sans-serif', "size"=25)))
+    layout(hoverlabel=list("font"=list("family"='sans-serif', "size"=18)))
       
   return(with_hover)
 }

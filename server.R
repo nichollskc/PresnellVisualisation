@@ -9,7 +9,7 @@ library(tidyr)
 library(heatmaply)
 library(limma)
 
-setwd("~/docs/PhD/PresnellVisualisation")
+#setwd("~/docs/PhD/PresnellVisualisation")
 source("biclust_utils.R")
 source("plot_utils.R")
 
