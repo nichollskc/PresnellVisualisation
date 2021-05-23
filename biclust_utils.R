@@ -227,7 +227,7 @@ generate_hovertext_sample_groups <- function(total_count, factor_count, cell, di
          "<br>Samples in factor: ", factor_count)
 }
 
-sample_heatmap <- function(total_counts, factor_counts, colour_palette, show_x_labels=TRUE) {
+sample_heatmap <- function(total_counts, factor_counts, colour, show_x_labels=TRUE) {
   factor_counts_long <- factor_counts %>%
     rownames_to_column("groupvar1") %>%
     pivot_longer(-groupvar1, names_to="groupvar2", values_to="factor_count")
@@ -238,16 +238,20 @@ sample_heatmap <- function(total_counts, factor_counts, colour_palette, show_x_l
     mutate(proportion=factor_count/total_count,
            percentage=as.integer(proportion * 100),
            percentage_text=convert_percentage_text(percentage),
-           SampleGroup=generate_hovertext_sample_groups(total_count, factor_count, groupvar1, groupvar2))
+           SampleGroup=generate_hovertext_sample_groups(total_count, factor_count, groupvar1, groupvar2)) %>% 
+    mutate(percentage_with_na=ifelse(is.na(percentage), -100, percentage))
 
+  print("uPDATe")
+  print(sample_groups_info)
   hm <- ggplot(sample_groups_info,
-               aes(x=groupvar2, y=groupvar1, fill=percentage, label=percentage_text, text=SampleGroup)) +
+               aes(x=groupvar2, y=groupvar1, fill=percentage_with_na, label=percentage_text, text=SampleGroup)) +
     geom_tile() +
     geom_text() +
-    scale_fill_distiller(palette=colour_palette, direction=1,
-                         na.value="grey50",
-                         limits=c(0, 100),
-                         guide=FALSE) +
+    scale_fill_gradient2(low="grey50",
+                        midpoint=0,
+                        high=colour,
+                        limits=c(-100, 100),
+                        guide=FALSE) +
     theme(panel.grid=element_blank(),
           axis.title=element_blank(),
           panel.background=element_blank())

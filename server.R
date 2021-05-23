@@ -102,8 +102,8 @@ server <- function(input, output) {
     factor_counts_sex_disease <- counts_by_variables(sample_info_with_fac, "sex", "short_disease", input$factor)
     factor_counts_cell_disease <- counts_by_variables(sample_info_with_fac, "cell", "short_disease", input$factor)
     
-    sex_hm <- sample_heatmap(total_counts_sex_disease, factor_counts_sex_disease, "Reds")
-    cell_hm <- sample_heatmap(total_counts_cell_disease, factor_counts_cell_disease, "Blues", show_x_labels=FALSE)
+    sex_hm <- sample_heatmap(total_counts_sex_disease, factor_counts_sex_disease, "firebrick")
+    cell_hm <- sample_heatmap(total_counts_cell_disease, factor_counts_cell_disease, "dodgerblue", show_x_labels=FALSE)
     
     subplot(cell_hm, sex_hm, nrows=2, heights=c(5/7, 2/7))
   })
