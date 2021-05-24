@@ -261,7 +261,26 @@ sample_heatmap <- function(total_counts, factor_counts, colour, show_x_labels=TR
     hm <- hm + theme(axis.text.x=element_blank())
   }
   with_hover <- ggplotly(tooltip="SampleGroup") %>%
-    layout(hoverlabel=list("font"=list("family"='sans-serif', "size"=18)))
+    layout(hoverlabel=list("font"=list("family"='sans-serif', "size"=12)))
       
   return(with_hover)
+}
+
+add_variance_from_factors <- function(gene_info_with_fac, biclustering) {
+  genewise_variances <- apply(Y, MARGIN=2, FUN=var)
+  gene_info_with_fac$total_variance <- genewise_variances
+  
+  for (fac_index in 1:biclustering$K) {
+    fac_contribution <- calc_factor_contribution(biclustering, fac_index)
+    variances_in_factor <- apply(fac_contribution, MARGIN=2, FUN=var)
+    prop_variance_explained <- variances_in_factor / genewise_variances
+    gene_info_with_fac[[paste0("var_factor_", fac_index)]] <- variances_in_factor
+    gene_info_with_fac[[paste0("prop_var_factor_", fac_index)]] <- prop_variance_explained
+  }
+  
+  return(gene_info_with_fac)
+}
+
+generate_factor_info <- function(gene_info_with_fac, sample_info_with_fac, biclustering) {
+  
 }

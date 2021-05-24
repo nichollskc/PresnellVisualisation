@@ -57,6 +57,16 @@ gene_table_output <- box(title="Genes table",
                          collapsible=TRUE, solidHeader = TRUE, status="primary", width=NULL,
 )
 
+gene_importance_plot <- box(title="Gene importance",
+                           div(paste0("Factor loading for this gene against proportion of variance",
+                                      " explained by this gene (i.e. variance of this gene ",
+                                      "within factor contribution divided by variance of this gene ",
+                                      "in whole dataset.")),
+                           plotlyOutput("gene_importance_plot"),
+                           uiOutput("pathway_dropdown"),
+                           collapsible=TRUE, solidHeader = TRUE, status="primary", width=NULL,
+)
+
 #################################################################################################
 # UI - Specifying HTML layout                                                                   #
 #################################################################################################
@@ -102,6 +112,7 @@ ui <- dashboardPage(
       column(width=6,
              pathways_table_output,
              factorcontribution_output,
+             gene_importance_plot,
              gene_table_output,
       )
     )

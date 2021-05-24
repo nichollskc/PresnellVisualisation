@@ -8,6 +8,7 @@ library(dplyr)
 library(tidyr)
 library(heatmaply)
 library(limma)
+library(withr)
 
 #setwd("~/docs/PhD/PresnellVisualisation")
 source("biclust_utils.R")
@@ -25,6 +26,7 @@ if (load_data_from_file) {
   SSLB_result <- add_row_col_names(SSLB_result, gene_symbols, sample_names)
   sample_info_with_fac <- generate_sample_info_with_fac(SSLB_result, sample_info)
   gene_info_with_fac <- generate_gene_info_with_fac(SSLB_result, gene_info)
+  gene_info_with_fac <- add_variance_from_factors(gene_info_with_fac, SSLB_result)
   
   pathway_info <- gene_info %>% select(-one_of("Ensembl", "ensembl", "GeneSymbol", "annotated"))
   load("pathway_enrichment.Rda")
@@ -70,10 +72,12 @@ server <- function(input, output) {
 
     factor_column <- paste0("factor_", input$factor)
     abs_factor_column <- paste0("abs_factor_", input$factor)
+    prop_var_column <- paste0("prop_var_factor_", input$factor)
+    var_column <- paste0("var_factor_", input$factor)
     gene_info_with_fac %>%
       arrange(desc(!!as.name(factor_column))) %>%
       select(GeneSymbol, ensembl,
-             factor_column, abs_factor_column,
+             factor_column, abs_factor_column, prop_var_column, var_column, total_variance,
              enriched_pathway_names)
   })
   sorted_genes_nz <- reactive({
@@ -95,6 +99,7 @@ server <- function(input, output) {
     factor_cont[rownames(sorted_samples_nz()), rownames(sorted_genes_nz())]
   })
   
+  
   #################################################################################################
   # Defining plots                                                                                #
   #################################################################################################
@@ -108,7 +113,6 @@ server <- function(input, output) {
     subplot(cell_hm, sex_hm, nrows=2, heights=c(5/7, 2/7))
   })
   output$factorcontribution_heatmap <- renderPlotly({
-
     if (input$factorcontribution_scale == "This factor") {
       max_value <- max(abs(nz_factor_contribution_sorted()))
     } else {
@@ -148,6 +152,47 @@ server <- function(input, output) {
               sum(nz_samples()),
               sum(nz_genes()))
     )
+  })
+  output$gene_importance_plot <- renderPlotly({
+    factor_gene_info <- sorted_genes_nz()
+    factor_gene_info$factor_loading <- factor_gene_info[[paste0("factor_",
+                                                                input$factor)]]
+    factor_gene_info$prop_var_explained <- factor_gene_info[[paste0("prop_var_factor_",
+                                                                    input$factor)]]
+    print("Gene importance")
+    print(input$pathway_to_highlight)
+    if (is.null(input$pathway_to_highlight) || input$pathway_to_highlight == "None") {
+      factor_gene_info$gene_highlighted <- TRUE
+      showlegend <- FALSE
+    } else {
+      factor_gene_info$gene_highlighted <- factor_gene_info[[input$pathway_to_highlight]] == 1
+      showlegend <- TRUE
+    }
+    
+    print(summary(factor_gene_info$gene_highlighted))
+    
+    p <- ggplot(factor_gene_info, aes(x=factor_loading,
+                                      y=prop_var_explained,
+                                      colour=gene_highlighted,
+                                      text=paste("Gene:", GeneSymbol))) +
+      scale_colour_manual(values=c("TRUE"="goldenrod", "FALSE"="black")) +
+      geom_point(alpha=0.8, size=1.5) +
+      labs(x="Gene's loading in factor",
+           y="Proportion of variance of gene explained by factor")
+    with_options(list(digits=4),
+                 ggplotly(p, tooltip=c("text", "x", "y")) %>%
+                   layout(legend=list(bgcolor = "cornsilk",
+                                       bordercolor = "#FFFFFF",
+                                       borderwidth = 2,
+                                       title=list(text="In selected pathway<br>"),
+                                       orientation = "h",
+                                       y = -0.3),
+                          showlegend=showlegend))
+  })
+  
+  output$pathway_dropdown <- renderUI({
+    pathways <- as.list(enriched_pathways()$PathwayName)
+    selectInput("pathway_to_highlight", "Pathway to highlight", choices=c("None", pathways))
   })
   
   # JS code to collapse box when you click on header
