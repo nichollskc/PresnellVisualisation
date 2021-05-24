@@ -213,8 +213,6 @@ proportions_to_integral_percentages <- function(df) {
 }
 
 convert_percentage_text <- function(x) {
-  print(class(x))
-  print(x)
   x[is.na(x) | x == 0] <- ""
   x[x != ""] <- paste0(x[x != ""], "%")
   
@@ -241,8 +239,6 @@ sample_heatmap <- function(total_counts, factor_counts, colour, show_x_labels=TR
            SampleGroup=generate_hovertext_sample_groups(total_count, factor_count, groupvar1, groupvar2)) %>% 
     mutate(percentage_with_na=ifelse(is.na(percentage), -100, percentage))
 
-  print("uPDATe")
-  print(sample_groups_info)
   hm <- ggplot(sample_groups_info,
                aes(x=groupvar2, y=groupvar1, fill=percentage_with_na, label=percentage_text, text=SampleGroup)) +
     geom_tile() +

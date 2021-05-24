@@ -166,7 +166,8 @@ server <- function(input, output) {
       showlegend <- FALSE
     } else {
       # Only colour genes belonging to this pathway
-      factor_gene_info$gene_highlighted <- factor_gene_info[[input$pathway_to_highlight]] == 1
+      pathway_name <- gsub(" \\([0-9]+ / [0-9]+ genes\\)", "", input$pathway_to_highlight)
+      factor_gene_info$gene_highlighted <- factor_gene_info[[pathway_name]] == 1
       showlegend <- TRUE
     }
     
@@ -190,7 +191,9 @@ server <- function(input, output) {
   })
   
   output$pathway_dropdown <- renderUI({
-    pathways <- as.list(enriched_pathways()$PathwayName)
+    pathways <- as.list(paste0(enriched_pathways()$PathwayName,
+                               " (", enriched_pathways()$GenesInIntersection,
+                               " / ", enriched_pathways()$GenesInPathway, " genes)"))
     selectInput("pathway_to_highlight", "Pathway to highlight", choices=c("None", pathways))
   })
   
