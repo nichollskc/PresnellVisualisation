@@ -99,7 +99,6 @@ server <- function(input, output) {
     factor_cont[rownames(sorted_samples_nz()), rownames(sorted_genes_nz())]
   })
   
-  
   #################################################################################################
   # Defining plots                                                                                #
   #################################################################################################
@@ -159,17 +158,17 @@ server <- function(input, output) {
                                                                 input$factor)]]
     factor_gene_info$prop_var_explained <- factor_gene_info[[paste0("prop_var_factor_",
                                                                     input$factor)]]
-    print("Gene importance")
-    print(input$pathway_to_highlight)
+    
+    # Check if pathway_to_highlight is either not yet defined, or None
+    # In this case, just colour all genes
     if (is.null(input$pathway_to_highlight) || input$pathway_to_highlight == "None") {
       factor_gene_info$gene_highlighted <- TRUE
       showlegend <- FALSE
     } else {
+      # Only colour genes belonging to this pathway
       factor_gene_info$gene_highlighted <- factor_gene_info[[input$pathway_to_highlight]] == 1
       showlegend <- TRUE
     }
-    
-    print(summary(factor_gene_info$gene_highlighted))
     
     p <- ggplot(factor_gene_info, aes(x=factor_loading,
                                       y=prop_var_explained,
@@ -179,14 +178,14 @@ server <- function(input, output) {
       geom_point(alpha=0.8, size=1.5) +
       labs(x="Gene's loading in factor",
            y="Proportion of variance of gene explained by factor")
-    with_options(list(digits=4),
+    with_options(list(digits=4), # Only print 4 digits in hovertext
                  ggplotly(p, tooltip=c("text", "x", "y")) %>%
                    layout(legend=list(bgcolor = "cornsilk",
-                                       bordercolor = "#FFFFFF",
-                                       borderwidth = 2,
-                                       title=list(text="In selected pathway<br>"),
-                                       orientation = "h",
-                                       y = -0.3),
+                                      bordercolor = "#FFFFFF",
+                                      borderwidth = 2,
+                                      title=list(text="In selected pathway"),
+                                      orientation = "h",
+                                      y = -0.3),
                           showlegend=showlegend))
   })
   
