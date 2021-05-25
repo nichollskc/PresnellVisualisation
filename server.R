@@ -26,7 +26,7 @@ if (load_data_from_file) {
   SSLB_result <- add_row_col_names(SSLB_result, gene_symbols, sample_names)
   sample_info_with_fac <- generate_sample_info_with_fac(SSLB_result, sample_info)
   gene_info_with_fac <- generate_gene_info_with_fac(SSLB_result, gene_info)
-  gene_info_with_fac <- add_variance_from_factors(gene_info_with_fac, SSLB_result)
+  gene_info_with_fac <- add_variance_from_factors(gene_info_with_fac, SSLB_result, Y)
   
   pathway_info <- gene_info %>% select(-one_of("Ensembl", "ensembl", "GeneSymbol", "annotated"))
   load("pathway_enrichment.Rda")
@@ -36,6 +36,8 @@ if (load_data_from_file) {
   factor_contribution_maxes <- apply(SSLB_result$X, 2, max) * apply(SSLB_result$B, 2, max)
   total_counts_sex_disease <- counts_by_variables(sample_info_with_fac, "sex", "short_disease")
   total_counts_cell_disease <- counts_by_variables(sample_info_with_fac, "cell", "short_disease")
+  
+  factor_info <- generate_factor_info(gene_info_with_fac, sample_info_with_fac, SSLB_result)
   
   #save.image(file="presnellVisualisation.Rda")
 }
@@ -188,6 +190,33 @@ server <- function(input, output) {
                                       orientation = "h",
                                       y = -0.3),
                           showlegend=showlegend))
+  })
+  output$factor_scatterplot <- renderPlotly({
+    print(factor_info)
+    factor_info$highlighted <- (factor_info$factor == paste0("factor_", input$factor))
+    factor_info$hovertext <- paste0(factor_info$factor,
+                               "<br>Genes: ", factor_info$num_genes,
+                               "<br>Samples: ", factor_info$num_samples,
+                               "<br>Prop. variance explained (mean in factor): ", signif(factor_info$local_mean_prop_var_explained, 3),
+                               "<br>Prop. variance explained (mean all genes): ", signif(factor_info$mean_prop_var_explained, 3))
+    
+    variable_names <- list("num_genes"="Number of genes",
+                           "num_samples"="Number of samples",
+                           "local_mean_prop_var_explained"="Proportion of variance explained (mean of genes in factor)",
+                           "mean_prop_var_explained"="Proportion of variance explained (mean of all genes)")
+    p <- ggplot(factor_info, aes_string(x=input$factor_scatterplot_x,
+                                        y=input$factor_scatterplot_y,
+                                        text="hovertext",
+                                        colour="highlighted")) +
+      geom_point() +
+      labs(x=variable_names[[input$factor_scatterplot_x]],
+           y=variable_names[[input$factor_scatterplot_y]]) +
+      scale_colour_manual(values=c("TRUE"="goldenrod", "FALSE"="black"))
+    
+    with_options(list(digits=3), # Only print 4 digits in hovertext,
+                 ggplotly(p,
+                          tooltip=c("text")) %>%
+                   layout(showlegend=FALSE))
   })
   
   output$pathway_dropdown <- renderUI({

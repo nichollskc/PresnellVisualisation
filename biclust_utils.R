@@ -262,14 +262,15 @@ sample_heatmap <- function(total_counts, factor_counts, colour, show_x_labels=TR
   return(with_hover)
 }
 
-add_variance_from_factors <- function(gene_info_with_fac, biclustering) {
+add_variance_from_factors <- function(gene_info_with_fac, biclustering, Y) {
   genewise_variances <- apply(Y, MARGIN=2, FUN=var)
   gene_info_with_fac$total_variance <- genewise_variances
   
   for (fac_index in 1:biclustering$K) {
     fac_contribution <- calc_factor_contribution(biclustering, fac_index)
     variances_in_factor <- apply(fac_contribution, MARGIN=2, FUN=var)
-    prop_variance_explained <- variances_in_factor / genewise_variances
+    # Any gene with 0 total variance will have prop_var NAN
+    prop_variance_explained <- (variances_in_factor / genewise_variances) %>% replace(is.na(.), 0)
     gene_info_with_fac[[paste0("var_factor_", fac_index)]] <- variances_in_factor
     gene_info_with_fac[[paste0("prop_var_factor_", fac_index)]] <- prop_variance_explained
   }
@@ -278,5 +279,17 @@ add_variance_from_factors <- function(gene_info_with_fac, biclustering) {
 }
 
 generate_factor_info <- function(gene_info_with_fac, sample_info_with_fac, biclustering) {
+  num_samples <- colSums(biclustering$X != 0)
+  num_genes <- colSums(biclustering$B != 0)
+  # Mean across all genes
+  mean_prop_var_explained <- colMeans(gene_info_with_fac %>% select(starts_with("prop_var")))
+  # Mean just of genes in the factor
+  local_mean_prop_var_explained <- colSums(gene_info_with_fac %>% select(starts_with("prop_var"))) / num_genes
   
+  factor_info <- data.frame(factor=names(num_genes),
+                            num_genes=num_genes,
+                            num_samples=num_samples,
+                            mean_prop_var_explained=mean_prop_var_explained,
+                            local_mean_prop_var_explained=local_mean_prop_var_explained)
+  return(factor_info)
 }

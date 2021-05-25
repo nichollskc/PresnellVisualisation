@@ -67,6 +67,19 @@ gene_importance_plot <- box(title="Gene importance",
                            collapsible=TRUE, solidHeader = TRUE, status="primary", width=NULL,
 )
 
+factor_scatterplot_variables <- list("Number of genes"="num_genes",
+                                     "Number of samples"="num_samples",
+                                     "Proportion of variance explained (mean of genes in factor)"="local_mean_prop_var_explained",
+                                     "Proportion of variance explained (mean of all genes)"="mean_prop_var_explained")
+factor_scatterplot <- box(title="Comparison to other factors",
+                          id="factor_scatterplot_box",
+                          div(paste0("Simple comparison of features of factors. The current factor is highlighted.")),
+                          plotlyOutput("factor_scatterplot"),
+                          selectInput("factor_scatterplot_x", "x-axis", factor_scatterplot_variables, selected="local_mean_prop_var_explained"),
+                          selectInput("factor_scatterplot_y", "y-axis", factor_scatterplot_variables, selected="num_genes"),
+                          collapsible=TRUE, solidHeader = TRUE, status="primary", width=NULL,
+)
+
 #################################################################################################
 # UI - Specifying HTML layout                                                                   #
 #################################################################################################
@@ -114,6 +127,7 @@ ui <- dashboardPage(
              factorcontribution_output,
              gene_importance_plot,
              gene_table_output,
+             factor_scatterplot,
       )
     )
   )
