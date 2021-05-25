@@ -132,6 +132,7 @@ server <- function(input, output) {
     heatmaply(nz_factor_contribution_sorted(),
               # Don't apply clustering to rows and columns since we've already sorted
               Rowv=FALSE, Colv=FALSE,
+              row_side_colors = sorted_samples_nz() %>% select(cell, sex, short_disease, treatment),
               scale_fill_gradient_fun = scale_fill_gradient2(low="blue", high="red", midpoint=0,
                                                              trans=transformation,
                                                              limits=limits,
@@ -192,7 +193,6 @@ server <- function(input, output) {
                           showlegend=showlegend))
   })
   output$factor_scatterplot <- renderPlotly({
-    print(factor_info)
     factor_info$highlighted <- (factor_info$factor == paste0("factor_", input$factor))
     factor_info$hovertext <- paste0(factor_info$factor,
                                "<br>Genes: ", factor_info$num_genes,
